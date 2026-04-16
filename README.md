@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # privaceus-frontend
 
 
@@ -91,3 +92,27 @@ For open source projects, say how it is licensed.
 
 ## Project status
 If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+=======
+# Privaceus Frontend
+
+Vue 3 + Vite frontend for the Privaceus planning analytics prototype.
+
+## Features
+
+- Dashboard for privacy-safe occupancy and HVAC metrics
+- Three.js two-story building with clickable rooms
+- Live fetches from the Node.js mock backend
+
+## Run
+
+```bash
+npm install
+npm run dev
+```
+
+Optional environment variable:
+
+```bash
+VITE_API_BASE=http://localhost:4000/api
+```
+>>>>>>> 87123fe (Initial commit)
