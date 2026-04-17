@@ -1,6 +1,27 @@
 <template>
   <main class="page-shell">
-    <section class="hero">
+    <section class="view-switcher" v-if="overview">
+      <div class="view-switcher__group">
+        <button
+          type="button"
+          class="view-switcher__button"
+          :class="{ 'view-switcher__button--active': currentView === 'manager' }"
+          @click="currentView = 'manager'"
+        >
+          Manager view
+        </button>
+        <button
+          type="button"
+          class="view-switcher__button"
+          :class="{ 'view-switcher__button--active': currentView === 'student' }"
+          @click="currentView = 'student'"
+        >
+          Student view
+        </button>
+      </div>
+    </section>
+
+    <section class="hero" v-if="currentView === 'manager'">
       <div class="hero__copy">
         <p class="hero__eyebrow">Privaceus Planning Analytics</p>
         <h1>Privaceus</h1>
@@ -54,7 +75,91 @@
       </aside>
     </section>
 
-    <section class="dashboard-grid" v-if="overview">
+    <section v-if="overview && currentView === 'student'" class="student-layout">
+      <article class="panel-card student-intro">
+        <p class="panel-card__eyebrow">Occupancy Dashboard</p>
+        <h3>Student building view</h3>
+        <p class="detail-card__note">
+          This view is read-only and shows the live 3D building occupancy with the current number
+          of people inside. You can rotate the model and select a room to inspect its occupancy.
+        </p>
+        <div class="student-controls">
+          <label class="control-field">
+            <span>Room opacity</span>
+            <input v-model="roomOpacity" type="range" min="0.35" max="1" step="0.05" />
+            <strong>{{ Math.round(roomOpacity * 100) }}%</strong>
+          </label>
+        </div>
+      </article>
+
+      <section class="dashboard-grid dashboard-grid--student">
+        <BuildingScene
+          :key="studentSceneKey"
+          :floors="overview.floors"
+          color-mode="occupancy"
+          :exploded="false"
+          :upper-floor-visible="true"
+          :room-opacity="roomOpacity"
+          :interactive="true"
+          :auto-rotate="false"
+          @select-room="selectedRoomId = $event.id"
+        />
+
+        <article class="detail-card">
+          <p class="detail-card__eyebrow">Occupancy Dashboard</p>
+          <template v-if="selectedRoom">
+            <h2>{{ selectedRoom.name }}</h2>
+            <p class="detail-card__meta">{{ selectedRoom.floorName }} - {{ selectedRoom.zone }}</p>
+            <div class="detail-metrics">
+              <div>
+                <span>People inside</span>
+                <strong>{{ selectedRoom.occupied }}</strong>
+              </div>
+              <div>
+                <span>Capacity</span>
+                <strong>{{ selectedRoom.capacity }}</strong>
+              </div>
+              <div>
+                <span>Available seats</span>
+                <strong>{{ selectedRoom.available }}</strong>
+              </div>
+              <div>
+                <span>Status</span>
+                <strong>{{ selectedRoom.utilizationLabel }}</strong>
+              </div>
+            </div>
+            <p class="detail-card__note">
+              {{ selectedRoom.occupied }} people are currently shown in this room in the 3D view.
+            </p>
+          </template>
+          <template v-else>
+            <h2>Select a room in the 3D model</h2>
+            <p class="detail-card__note">
+              Click any room to see its current occupancy and available seats.
+            </p>
+          </template>
+        </article>
+      </section>
+
+      <article class="panel-card panel-card--wide">
+        <p class="panel-card__eyebrow">Occupancy Dashboard</p>
+        <h3>People in the building</h3>
+        <div class="ops-grid student-ops-grid">
+          <article class="ops-card">
+            <span>Total people now</span>
+            <strong>{{ overview.summary.totalOccupied }}</strong>
+            <p>Live people count currently visible in the 3D building view.</p>
+          </article>
+          <article v-for="floor in overview.floors" :key="floor.id" class="ops-card">
+            <span>{{ floor.name }}</span>
+            <strong>{{ floor.totalOccupied }}</strong>
+            <p>{{ floor.totalCapacity - floor.totalOccupied }} seats still available.</p>
+          </article>
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-grid" v-if="overview && currentView === 'manager'">
       <BuildingScene
         :key="sceneKey"
         :floors="overview.floors"
@@ -133,7 +238,7 @@
       </article>
     </section>
 
-    <section class="content-grid" v-if="overview">
+    <section class="content-grid" v-if="overview && currentView === 'manager'">
       <article class="panel-card">
         <p class="panel-card__eyebrow">Occupancy Dashboard</p>
         <h3>Floor performance</h3>
@@ -229,6 +334,7 @@ const sceneVersion = ref(0);
 const draftOccupied = ref(0);
 const draftHvacLoad = ref(0);
 const updateMessage = ref("");
+const currentView = ref("manager");
 
 const percent = (value) => `${Math.round(value * 100)}%`;
 
@@ -250,6 +356,7 @@ const sceneKey = computed(
   () =>
     `${sceneVersion.value}-${colorMode.value}-${explodedView.value}-${upperFloorVisible.value}-${roomOpacity.value}`
 );
+const studentSceneKey = computed(() => `${sceneVersion.value}-student`);
 
 watch(
   selectedRoom,

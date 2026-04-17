@@ -5,7 +5,13 @@
         <p class="scene-card__eyebrow">Three.js Building View</p>
         <h2>Two-story occupancy model</h2>
       </div>
-      <div class="scene-card__hint">Drag to rotate. Scroll to zoom. Click a room for details.</div>
+      <div class="scene-card__hint">
+        {{
+          props.interactive
+            ? "Drag to rotate. Scroll to zoom. Click a room for details."
+            : "Read-only occupancy view."
+        }}
+      </div>
     </div>
     <div ref="canvasHost" class="scene-card__canvas"></div>
   </section>
@@ -26,6 +32,14 @@ const props = defineProps({
     default: "occupancy"
   },
   exploded: {
+    type: Boolean,
+    default: false
+  },
+  interactive: {
+    type: Boolean,
+    default: true
+  },
+  autoRotate: {
     type: Boolean,
     default: false
   },
@@ -97,6 +111,7 @@ function disposeScene() {
 }
 
 function onPointerClick(event) {
+  if (!props.interactive) return;
   if (!renderer || !camera) return;
 
   const bounds = renderer.domElement.getBoundingClientRect();
@@ -251,6 +266,11 @@ function initScene() {
   controls.minDistance = 16;
   controls.maxDistance = 48;
   controls.target.set(0, 5, 0);
+  controls.enableRotate = props.interactive;
+  controls.enableZoom = props.interactive;
+  controls.enablePan = false;
+  controls.autoRotate = props.autoRotate;
+  controls.autoRotateSpeed = 1.2;
 
   raycaster = new THREE.Raycaster();
   pointer = new THREE.Vector2();
@@ -271,12 +291,22 @@ function initScene() {
   scene.add(ambientLight, mainLight, fillLight, ground);
   addBuilding();
   handleResize();
-  renderer.domElement.addEventListener("click", onPointerClick);
+  if (props.interactive) {
+    renderer.domElement.addEventListener("click", onPointerClick);
+  }
   animate();
 }
 
 watch(
-  () => [props.floors, props.colorMode, props.exploded, props.upperFloorVisible, props.roomOpacity],
+  () => [
+    props.floors,
+    props.colorMode,
+    props.exploded,
+    props.interactive,
+    props.autoRotate,
+    props.upperFloorVisible,
+    props.roomOpacity
+  ],
   ([floors]) => {
     if (floors.length) {
       initScene();
